@@ -6,7 +6,9 @@ st.set_page_config(page_title="Premier League Forecast", page_icon="⚽", layout
 
 st.markdown("""
 <style>
-.block-container {max-width: 1100px; padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;}
+header, [data-testid="stHeader"], [data-testid="stAppHeader"], .stAppHeader, [data-testid="stToolbar"], [data-testid="stAppToolbar"],
+[data-testid="stDecoration"], [data-testid="stStatusWidget"], .stAppDeployButton, #MainMenu, footer {display: none !important; visibility: hidden !important; height: 0 !important;}
+.block-container, [data-testid="stMainBlockContainer"] {max-width: 1100px; padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 4vw, 2.5rem) 3rem !important;}
 [data-testid="stHorizontalBlock"] {gap: 1rem;}
 [data-testid="stMetric"] {min-width: 0; overflow-wrap: anywhere;}
 [data-testid="stDataFrame"] {max-width: 100%;}
@@ -24,14 +26,14 @@ st.markdown("""
 .score-fill {height:100%; background:linear-gradient(90deg,#286eae,#65a6e7); border-radius:8px;}
 .score-pct {width:58px; text-align:right; font-weight:600; white-space:nowrap;}
 @media (max-width: 640px) {
-  .block-container {padding: 1rem .8rem 2rem !important;}
+  .block-container, [data-testid="stMainBlockContainer"] {padding: .8rem .8rem 2rem !important;}
   .hero {padding: 17px 16px; border-radius: 13px; margin-bottom: 16px;}
   .hero h1 {font-size: 22px; line-height: 1.2;}
   .hero p {font-size: 12px; line-height: 1.45; margin-top: 5px;}
   h2 {font-size: 1.25rem !important;}
   h3 {font-size: 1.1rem !important;}
   [data-testid="stHorizontalBlock"] {flex-wrap: wrap; gap: .55rem;}
-  [data-testid="stHorizontalBlock"] > [data-testid="column"] {flex: 1 1 100% !important; min-width: 0 !important; width: 100% !important;}
+  [data-testid="stHorizontalBlock"] > [data-testid="column"], [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {flex: 1 1 100% !important; min-width: 0 !important; width: 100% !important;}
   [data-testid="stMetric"] {padding: 10px 12px; background: #f3f5f4; border-radius: 10px;}
   [data-testid="stMetricLabel"] {font-size: 12px;}
   [data-testid="stMetricValue"] {font-size: 1.55rem;}
