@@ -5,7 +5,7 @@ st.set_page_config(page_title="Football Forecast", page_icon="⚽", layout="cent
 
 st.markdown("""
 <style>
-.block-container{max-width:720px;padding-top:2rem}
+.block-container{max-width:720px;padding-top:4.5rem}
 .hero{background:linear-gradient(135deg,#0f5132,#1f8a5b);color:#fff;border-radius:16px;padding:20px 22px;margin-bottom:18px}
 .hero h1{margin:0;font-size:26px;color:#fff;padding:0}
 .hero p{margin:4px 0 0;opacity:.85;font-size:14px}
