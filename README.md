@@ -1,29 +1,41 @@
-# Football Intelligence System (Dixon-Coles + n8n)
+# Premier League Forecast Demo
 
-## Files
-- `model.py`       Dixon-Coles model (time-decayed), outcome + correct-score probabilities
-- `sources.py`     API clients: football-data.org (fixtures/results), The Odds API (odds), API-Football (injuries), Telegram
-- `main.py`        Pipeline: sync | prematch | results | report
-- `db.py`          SQLite schema (matches, predictions, odds snapshots, team news)
-- `teams.py`       Team-name normalisation across sources
-- `n8n/`           Two importable workflows (pre-match every 3h; results + accuracy report daily)
-- `app.py`, `dc_demo.py`  Streamlit demo UI and original backtest script
+A Streamlit demonstration of a statistical football forecasting model using the supplied historical EPL CSV files.
 
-## Quick test (no API keys)
-    pip install -r requirements.txt
-    python main.py prematch --demo --db demo.db
-    python main.py results  --demo --db demo.db
-    python main.py report   --demo --db demo.db
+## Run locally
 
-## Live setup
-1. Copy `.env.example` values into environment variables (API keys, Telegram bot token + chat id).
-2. `python main.py sync`          (5 past seasons + current; free football-data.org tier is rate limited)
-3. `python main.py prematch --hours 24 --send`
-4. In n8n (self-hosted; the Execute Command node is unavailable on n8n Cloud): import both JSON files,
-   set the project path in the command, your Telegram credential and chat id, then activate.
+```bash
+cd football_demo
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run app.py
+```
 
-## Status / limits (be honest with the client)
-- Offline demo mode is tested. API calls in `sources.py` are written from provider docs and NOT yet tested with live keys.
-- Provider plans decide what history/odds/injury data is available; verify coverage before promising it.
-- Team news = injury/suspension feed only; it is reported, not yet fed into the model.
-- Odds are stored as snapshots for movement tracking; they are not used to train the model.
+The command-line model and walk-forward backtest can also be run with:
+
+```bash
+python dc_demo.py
+```
+
+## Included data
+
+The ZIP currently includes six seasons: 2015-16 through 2020-21 (2,280 match rows).
+
+## Model
+
+- Poisson goal scoring model with Dixon-Coles low-score correction.
+- Exponential time-decay weighting.
+- Home/draw/away probabilities and top-five correct-score probabilities.
+- Walk-forward backtest: each fixture is predicted from matches before its date.
+- Outcome accuracy, log loss, Brier score, top-five score hit rate and exact top-one score rate.
+- Baseline comparisons for log loss and Brier score.
+
+## Important scope limitations
+
+This is a working historical-data prototype, not the complete requested production system. The supplied dataset does **not** include the five most recent completed Premier League seasons or the current 2026-27 season. It also does not yet connect live sports APIs, team news, bookmaker odds, n8n workflows, scheduled updates, or Telegram reporting. Those require data-provider credentials, source selection and separate integration work.
+
+Backtest metrics are computed from the included CSV data when the app runs; they are not hardcoded in the dashboard.

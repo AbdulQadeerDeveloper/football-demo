@@ -1,5 +1,5 @@
 """Dixon-Coles football forecasting demo (real EPL data 2015-16 .. 2020-21)."""
-import glob, numpy as np, pandas as pd
+import glob, os, numpy as np, pandas as pd
 from scipy.optimize import minimize
 from scipy.stats import poisson
 
@@ -9,8 +9,8 @@ NAMES = {"Brighton & Hove Albion":"Brighton","Manchester Utd":"Manchester United
 
 def load():
     fr = []
-    for f in sorted(glob.glob("data/*.csv")):
-        d = pd.read_csv(f); d["season"] = f.split("/")[-1][:-4]; fr.append(d)
+    for f in sorted(glob.glob(os.path.join(os.path.dirname(__file__), "data", "*.csv"))):
+        d = pd.read_csv(f); d["season"] = os.path.basename(f)[:-4]; fr.append(d)
     d = pd.concat(fr); d["FT"] = d["FT"].astype(str).str.replace("–","-")
     d = d[d["FT"].str.match(r"^\d+-\d+$", na=False)].copy()
     d[["hg","ag"]] = d["FT"].str.split("-", expand=True).astype(int)
@@ -56,6 +56,52 @@ def outcome_probs(P):
 def top_scores(P, k=5):
     idx = np.dstack(np.unravel_index(np.argsort(-P.ravel())[:k], P.shape))[0]
     return [(f"{i}-{j}", P[i,j]) for i,j in idx]
+
+
+def backtest(df, season="2020-21", refit_days=10):
+    """Walk-forward evaluation; each prediction uses matches strictly before kickoff date."""
+    test = df[df.season == season].sort_values("date").reset_index(drop=True)
+    recs = []
+    model, last_fit = None, None
+    for _, row in test.iterrows():
+        if model is None or (row.date-last_fit).days >= refit_days:
+            history = df[df.date < row.date]
+            if history.empty:
+                continue
+            model = fit(history, row.date)
+            last_fit = row.date
+        if row.home not in model["ix"] or row.away not in model["ix"]:
+            continue
+        P, _, _ = score_matrix(model, row.home, row.away)
+        probs = np.asarray(outcome_probs(P))
+        actual = 0 if row.hg > row.ag else (1 if row.hg == row.ag else 2)
+        scores = [s for s, _ in top_scores(P, 5)]
+        recs.append((probs, actual, f"{row.hg}-{row.ag}" in scores,
+                     f"{row.hg}-{row.ag}" == scores[0]))
+    if not recs:
+        raise ValueError(f"No eligible matches found for backtest season {season}")
+    probs = np.asarray([r[0] for r in recs])
+    actual = np.asarray([r[1] for r in recs])
+    prior = df[df.date < test.date.min()]
+    labels = np.where(prior.hg > prior.ag, 0, np.where(prior.hg == prior.ag, 1, 2))
+    base_rates = np.bincount(labels, minlength=3).astype(float)
+    base_rates /= base_rates.sum()
+    baseline = np.tile(base_rates, (len(actual), 1))
+    onehot = np.eye(3)[actual]
+    log_loss = lambda p: float(-np.mean(np.log(np.clip(p[np.arange(len(actual)), actual], 1e-15, 1))))
+    brier = lambda p: float(np.mean(np.sum((p-onehot)**2, axis=1)))
+    return {
+        "season": season,
+        "matches": len(actual),
+        "outcome_accuracy": float(np.mean(probs.argmax(1) == actual)),
+        "log_loss": log_loss(probs),
+        "baseline_log_loss": log_loss(baseline),
+        "brier_score": brier(probs),
+        "baseline_brier_score": brier(baseline),
+        "top5_score_rate": float(np.mean([r[2] for r in recs])),
+        "top1_score_rate": float(np.mean([r[3] for r in recs])),
+    }
+
 
 if __name__ == "__main__":
     d = load()

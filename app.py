@@ -1,71 +1,135 @@
-import pandas as pd, streamlit as st
+import pandas as pd
+import streamlit as st
 import dc_demo as dc
 
-st.set_page_config(page_title="Football Forecast", page_icon="⚽", layout="centered")
+st.set_page_config(page_title="Premier League Forecast", page_icon="⚽", layout="centered")
 
 st.markdown("""
 <style>
-[data-testid="stToolbar"],[data-testid="stHeader"],[data-testid="stDecoration"],#MainMenu,footer{display:none!important}
-.block-container{max-width:720px;padding-top:2rem}
-.hero{background:linear-gradient(135deg,#0f5132,#1f8a5b);color:#fff;border-radius:16px;padding:20px 22px;margin-bottom:18px}
-.hero h1{margin:0;font-size:26px;color:#fff;padding:0}
-.hero p{margin:4px 0 0;opacity:.85;font-size:14px}
-.match{display:flex;justify-content:space-between;align-items:center;font-size:22px;font-weight:700;margin:14px 0 2px}
-.match span.vs{font-size:13px;font-weight:400;opacity:.6}
-.xg{opacity:.65;font-size:13px;margin-bottom:12px}
-.pbar{display:flex;height:44px;border-radius:12px;overflow:hidden;color:#fff;font-weight:700;font-size:15px}
-.pbar div{display:flex;align-items:center;justify-content:center}
-.plbl{display:flex;justify-content:space-between;font-size:12px;opacity:.65;margin:6px 2px 18px}
-.srow{display:flex;align-items:center;gap:12px;margin:8px 0}
-.sc{width:52px;font-weight:700;font-size:16px}
-.trk{flex:1;background:rgba(128,128,128,.18);height:16px;border-radius:8px;overflow:hidden}
-.trk i{display:block;height:100%;background:linear-gradient(90deg,#2b6cb0,#63a4e8);border-radius:8px}
-.pc{width:56px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
-.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
-.kpi div{border:1px solid rgba(128,128,128,.25);border-radius:12px;padding:12px;text-align:center}
-.kpi b{display:block;font-size:22px}.kpi small{opacity:.65;font-size:11px}
-.foot{opacity:.55;font-size:12px;margin-top:22px;text-align:center}
+.block-container {max-width: 980px; padding-top: 2rem; padding-bottom: 3rem;}
+.hero {background: linear-gradient(110deg,#10583d,#20885f); padding: 22px 26px;
+       border-radius: 16px; color: white; margin-bottom: 22px;}
+.hero h1 {font-size: 28px; margin: 0 0 4px 0; color: white;}
+.hero p {margin: 0; opacity: .9; font-size: 14px;}
+.metric-card {background: #f3f5f4; padding: 14px; border-radius: 12px;}
+.small-muted {color: #777; font-size: 12px;}
+.score-row {display:flex; align-items:center; gap:12px; margin: 9px 0;}
+.score-label {width:42px; font-weight:700;}
+.score-bar {height:12px; background:#e7e9e8; border-radius:8px; flex:1; overflow:hidden;}
+.score-fill {height:100%; background:linear-gradient(90deg,#286eae,#65a6e7); border-radius:8px;}
+.score-pct {width:58px; text-align:right; font-weight:600;}
 </style>
-<div class="hero"><h1>⚽ Premier League Forecast</h1>
-<p>Dixon–Coles statistical model on real EPL data (2015-16 to 2020-21).</p></div>
+<div class="hero">
+  <h1>⚽ Premier League Forecast</h1>
+  <p>Dixon–Coles statistical model · historical EPL results · walk-forward evaluation</p>
+</div>
 """, unsafe_allow_html=True)
 
 @st.cache_data
-def get_data(): return dc.load()
+def load_data():
+    return dc.load()
+
+@st.cache_data
+def run_backtest(_data, season):
+    return dc.backtest(_data, season)
 
 @st.cache_resource
-def get_model(_d): return dc.fit(_d, _d.date.max() + pd.Timedelta(days=1))
+def fit_latest(_data):
+    return dc.fit(_data, _data.date.max() + pd.Timedelta(days=1))
 
-d = get_data(); m = get_model(d)
-teams = sorted(m["ix"])
+try:
+    data = load_data()
+except Exception as exc:
+    st.error(f"Could not load the CSV data: {exc}")
+    st.stop()
 
-c1, c2 = st.columns(2)
-home = c1.selectbox("Home team", teams, index=teams.index("Liverpool") if "Liverpool" in teams else 0)
-away_opts = [t for t in teams if t != home]
-away = c2.selectbox("Away team", away_opts, index=away_opts.index("Arsenal") if "Arsenal" in away_opts else 0)
+seasons = sorted(data.season.unique())
+model = fit_latest(data)
+teams = sorted(model["ix"])
 
-P, lh, la = dc.score_matrix(m, home, away)
-H, D, A = dc.outcome_probs(P)
+st.caption(
+    f"Dataset: {len(data):,} completed matches · {len(seasons)} seasons "
+    f"({seasons[0]} to {seasons[-1]})."
+)
 
-st.markdown(f"""
-<div class="match"><span>{home}</span><span class="vs">vs</span><span>{away}</span></div>
-<div class="xg">Expected goals: {lh:.2f} – {la:.2f}</div>
-<div class="pbar">
-<div style="width:{H*100:.1f}%;background:#1f8a5b">{H:.0%}</div>
-<div style="width:{D*100:.1f}%;background:#7b8794">{D:.0%}</div>
-<div style="width:{A*100:.1f}%;background:#d9534f">{A:.0%}</div></div>
-<div class="plbl"><span>Home win {H:.1%}</span><span>Draw {D:.1%}</span><span>Away win {A:.1%}</span></div>
-""", unsafe_allow_html=True)
+st.subheader("Match prediction")
+col1, col2 = st.columns(2)
+home = col1.selectbox("Home team", teams, index=teams.index("Aston Villa") if "Aston Villa" in teams else 0)
+away_options = [team for team in teams if team != home]
+away = col2.selectbox("Away team", away_options, index=away_options.index("Brighton") if "Brighton" in away_options else 0)
 
-ts = dc.top_scores(P, 5); top = ts[0][1]
-rows = "".join(f'<div class="srow"><span class="sc">{s}</span><div class="trk"><i style="width:{p/top*100:.0f}%"></i></div><span class="pc">{p:.1%}</span></div>' for s, p in ts)
-st.markdown(f"**Top 5 correct scores**{rows}", unsafe_allow_html=True)
+P, home_xg, away_xg = dc.score_matrix(model, home, away)
+home_p, draw_p, away_p = dc.outcome_probs(P)
 
-st.markdown("**Backtest · 2020-21 · 378 matches (walk-forward, no look-ahead)**")
-st.markdown("""
-<div class="kpi">
-<div><b>50.3%</b><small>Result accuracy<br>(baseline 37.6%)</small></div>
-<div><b>1.025</b><small>Log loss<br>(naive 1.091)</small></div>
-<div><b>46.8%</b><small>Actual score<br>in top 5</small></div></div>
-<div class="foot">Demo only. Uses historical data; live odds, team news, n8n and Telegram come in the full build.</div>
-""", unsafe_allow_html=True)
+st.markdown(f"### {home} <span style='color:#999;font-size:14px'>vs</span> {away}", unsafe_allow_html=True)
+st.caption(f"Expected goals: **{home_xg:.2f} – {away_xg:.2f}** · Model fitted using all supplied historical matches.")
+a, b, c = st.columns(3)
+a.metric("Home win", f"{home_p:.1%}")
+b.metric("Draw", f"{draw_p:.1%}")
+c.metric("Away win", f"{away_p:.1%}")
+
+st.markdown("#### Outcome probability")
+st.markdown(
+    f"""<div style="display:flex;height:40px;border-radius:10px;overflow:hidden;color:white;
+        font-weight:700;text-align:center;line-height:40px">
+        <div style="width:{home_p*100:.4f}%;background:#20885f">{home_p:.0%}</div>
+        <div style="width:{draw_p*100:.4f}%;background:#7d8997">{draw_p:.0%}</div>
+        <div style="width:{away_p*100:.4f}%;background:#d9534f">{away_p:.0%}</div>
+        </div>""",
+    unsafe_allow_html=True
+)
+
+st.markdown("#### Top 5 correct scores")
+top = dc.top_scores(P, 5)
+maxp = max(p for _, p in top)
+for score, probability in top:
+    width = probability / maxp * 100
+    st.markdown(
+        f"""<div class="score-row">
+        <div class="score-label">{score}</div>
+        <div class="score-bar"><div class="score-fill" style="width:{width:.2f}%"></div></div>
+        <div class="score-pct">{probability:.1%}</div>
+        </div>""",
+        unsafe_allow_html=True
+    )
+
+st.divider()
+st.subheader("Historical backtest")
+st.caption("Walk-forward testing: each match is predicted using only matches played before its date.")
+default_season = "2020-21" if "2020-21" in seasons else seasons[-1]
+bt_season = st.selectbox("Test season", seasons, index=seasons.index(default_season))
+with st.spinner("Running walk-forward backtest…"):
+    try:
+        metrics = run_backtest(data, bt_season)
+    except Exception as exc:
+        st.error(f"Backtest could not be completed: {exc}")
+        st.stop()
+
+m1, m2, m3 = st.columns(3)
+m1.metric("Matches tested", f"{metrics['matches']:,}")
+m2.metric("Outcome accuracy", f"{metrics['outcome_accuracy']:.1%}")
+m3.metric("Actual score in top 5", f"{metrics['top5_score_rate']:.1%}")
+
+metrics_table = pd.DataFrame([
+    ["Outcome accuracy", f"{metrics['outcome_accuracy']:.1%}", "Higher is better"],
+    ["Log loss", f"{metrics['log_loss']:.3f}", f"Baseline: {metrics['baseline_log_loss']:.3f} · lower is better"],
+    ["Brier score", f"{metrics['brier_score']:.3f}", f"Baseline: {metrics['baseline_brier_score']:.3f} · lower is better"],
+    ["Actual score in top 5", f"{metrics['top5_score_rate']:.1%}", "Share of matches where actual score was among five most likely"],
+    ["Exact top-1 score", f"{metrics['top1_score_rate']:.1%}", "Share of matches where most likely score was exact"],
+], columns=["Metric", "Model", "Interpretation"])
+st.dataframe(metrics_table, hide_index=True, use_container_width=True)
+
+with st.expander("Model methodology and limitations"):
+    st.markdown("""
+    - Attack and defence strengths are estimated from historical goals.
+    - The model uses a Poisson goal model with the Dixon–Coles low-score adjustment (`rho`).
+    - Recent matches receive greater weight through exponential time decay.
+    - The backtest refits on a rolling historical window and excludes matches on or after each fixture date.
+    - Log loss and Brier score are compared with a historical outcome-frequency baseline.
+
+    **Data limitation:** This ZIP contains six completed seasons only, from 2015–16 through 2020–21.
+    It does not contain the five most recent completed seasons or the current 2026–27 season.
+    The prediction screen is a historical-data demonstration, not a live fixture feed.
+    """)
+
+st.caption("Prototype only · No live team-news feed, bookmaker odds, n8n scheduling or Telegram delivery is connected yet.")
