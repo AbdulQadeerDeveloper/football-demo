@@ -2,11 +2,16 @@ import pandas as pd
 import streamlit as st
 import dc_demo as dc
 
-st.set_page_config(page_title="Premier League Forecast", page_icon="⚽", layout="centered")
+st.set_page_config(page_title="Premier League Forecast", page_icon="⚽", layout="wide", initial_sidebar_state="collapsed")
 
 st.markdown("""
 <style>
-.block-container {max-width: 980px; padding-top: 2rem; padding-bottom: 3rem;}
+.block-container {max-width: 1100px; padding: 2rem clamp(1rem, 4vw, 2.5rem) 3rem;}
+[data-testid="stHorizontalBlock"] {gap: 1rem;}
+[data-testid="stMetric"] {min-width: 0; overflow-wrap: anywhere;}
+[data-testid="stDataFrame"] {max-width: 100%;}
+.stSelectbox, [data-testid="stSelectbox"] {min-width: 0;}
+.hero {box-sizing: border-box; width: 100%;}
 .hero {background: linear-gradient(110deg,#10583d,#20885f); padding: 22px 26px;
        border-radius: 16px; color: white; margin-bottom: 22px;}
 .hero h1 {font-size: 28px; margin: 0 0 4px 0; color: white;}
@@ -17,7 +22,26 @@ st.markdown("""
 .score-label {width:42px; font-weight:700;}
 .score-bar {height:12px; background:#e7e9e8; border-radius:8px; flex:1; overflow:hidden;}
 .score-fill {height:100%; background:linear-gradient(90deg,#286eae,#65a6e7); border-radius:8px;}
-.score-pct {width:58px; text-align:right; font-weight:600;}
+.score-pct {width:58px; text-align:right; font-weight:600; white-space:nowrap;}
+@media (max-width: 640px) {
+  .block-container {padding: 1rem .8rem 2rem !important;}
+  .hero {padding: 17px 16px; border-radius: 13px; margin-bottom: 16px;}
+  .hero h1 {font-size: 22px; line-height: 1.2;}
+  .hero p {font-size: 12px; line-height: 1.45; margin-top: 5px;}
+  h2 {font-size: 1.25rem !important;}
+  h3 {font-size: 1.1rem !important;}
+  [data-testid="stHorizontalBlock"] {flex-wrap: wrap; gap: .55rem;}
+  [data-testid="stHorizontalBlock"] > [data-testid="column"] {flex: 1 1 100% !important; min-width: 0 !important; width: 100% !important;}
+  [data-testid="stMetric"] {padding: 10px 12px; background: #f3f5f4; border-radius: 10px;}
+  [data-testid="stMetricLabel"] {font-size: 12px;}
+  [data-testid="stMetricValue"] {font-size: 1.55rem;}
+  .score-row {gap: 8px; margin: 11px 0;}
+  .score-label {width: 36px; flex: 0 0 36px; font-size: 13px;}
+  .score-bar {min-width: 0; height: 10px;}
+  .score-pct {width: 52px; flex: 0 0 52px; font-size: 12px;}
+  [data-testid="stDataFrame"] {overflow-x: auto;}
+  [data-testid="stDataFrame"] iframe {max-width: 100%;}
+}
 </style>
 <div class="hero">
   <h1>⚽ Premier League Forecast</h1>
