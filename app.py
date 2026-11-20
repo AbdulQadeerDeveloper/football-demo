@@ -5,7 +5,8 @@ st.set_page_config(page_title="Football Forecast", page_icon="⚽", layout="cent
 
 st.markdown("""
 <style>
-.block-container{max-width:720px;padding-top:4.5rem}
+[data-testid="stToolbar"],[data-testid="stHeader"],[data-testid="stDecoration"],#MainMenu,footer{display:none!important}
+.block-container{max-width:720px;padding-top:2rem}
 .hero{background:linear-gradient(135deg,#0f5132,#1f8a5b);color:#fff;border-radius:16px;padding:20px 22px;margin-bottom:18px}
 .hero h1{margin:0;font-size:26px;color:#fff;padding:0}
 .hero p{margin:4px 0 0;opacity:.85;font-size:14px}
@@ -26,7 +27,7 @@ st.markdown("""
 .foot{opacity:.55;font-size:12px;margin-top:22px;text-align:center}
 </style>
 <div class="hero"><h1>⚽ Premier League Forecast</h1>
-<p>Dixon–Coles statistical model on real EPL data (2015-16 to 2020-21). Not a chatbot.</p></div>
+<p>Dixon–Coles statistical model on real EPL data (2015-16 to 2020-21).</p></div>
 """, unsafe_allow_html=True)
 
 @st.cache_data

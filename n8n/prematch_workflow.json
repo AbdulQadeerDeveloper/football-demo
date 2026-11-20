@@ -1,0 +1,107 @@
+{
+ "name": "Football - Pre-match updates (every 3h)",
+ "nodes": [
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "hours",
+       "hoursInterval": 3
+      }
+     ]
+    }
+   },
+   "name": "Schedule",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    0,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "command": "cd /path/to/football_ai && python main.py prematch --hours 24"
+   },
+   "name": "Run Python",
+   "type": "n8n-nodes-base.executeCommand",
+   "typeVersion": 1,
+   "position": [
+    240,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "jsCode": "const out=$input.first().json.stdout.trim().split('\\n').pop();\nlet msgs=[];\ntry{msgs=JSON.parse(out)}catch(e){}\nreturn msgs.map(t=>({json:{text:t}}));"
+   },
+   "name": "Split Messages",
+   "type": "n8n-nodes-base.code",
+   "typeVersion": 2,
+   "position": [
+    480,
+    0
+   ]
+  },
+  {
+   "parameters": {
+    "chatId": "YOUR_CHAT_ID",
+    "text": "={{ $json.text }}",
+    "additionalFields": {}
+   },
+   "name": "Telegram",
+   "type": "n8n-nodes-base.telegram",
+   "typeVersion": 1.2,
+   "position": [
+    720,
+    0
+   ],
+   "credentials": {
+    "telegramApi": {
+     "id": "1",
+     "name": "Telegram account"
+    }
+   }
+  }
+ ],
+ "connections": {
+  "Schedule": {
+   "main": [
+    [
+     {
+      "node": "Run Python",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Run Python": {
+   "main": [
+    [
+     {
+      "node": "Split Messages",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Split Messages": {
+   "main": [
+    [
+     {
+      "node": "Telegram",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  }
+ },
+ "active": false,
+ "settings": {
+  "executionOrder": "v1"
+ }
+}
